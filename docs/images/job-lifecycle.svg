@@ -1,0 +1,153 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" width="1200" height="600">
+  <title>Sync Guard Job Lifecycle State Diagram</title>
+  <desc>State transition diagram showing sync job lifecycle: pending, in_progress, success, failed, and dead states with transition triggers including claim, delivery, backoff, stuck recovery, and operator retry.</desc>
+
+  <defs>
+    <style>
+      .bg { fill: #f8fafc; }
+      .header-title { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 22px; font-weight: 700; fill: #0f172a; }
+      .header-sub { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 500; fill: #475569; }
+      .state-title { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 18px; font-weight: 700; text-anchor: middle; }
+      .state-sub { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 15px; font-weight: 500; text-anchor: middle; fill: #334155; }
+      .transition-label { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 15px; font-weight: 700; fill: #0f172a; }
+      .transition-sub { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 500; fill: #475569; }
+      .footer-text { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 15px; font-weight: 600; fill: #64748b; }
+
+      .state-pending { fill: #ffffff; stroke: #64748b; stroke-width: 2.5; rx: 12; }
+      .state-inprogress { fill: #eff6ff; stroke: #2563eb; stroke-width: 2.5; rx: 12; }
+      .state-success { fill: #f0fdf4; stroke: #16a34a; stroke-width: 2.5; rx: 12; }
+      .state-failed { fill: #fffbeb; stroke: #d97706; stroke-width: 2.5; rx: 12; }
+      .state-dead { fill: #fef2f2; stroke: #dc2626; stroke-width: 2.5; rx: 12; }
+
+      .arrow-norm { stroke: #2563eb; stroke-width: 2.5; fill: none; stroke-linecap: round; }
+      .arrow-succ { stroke: #16a34a; stroke-width: 2.5; fill: none; stroke-linecap: round; }
+      .arrow-fail { stroke: #d97706; stroke-width: 2.5; stroke-dasharray: 6 5; fill: none; stroke-linecap: round; }
+      .arrow-crit { stroke: #dc2626; stroke-width: 2.5; stroke-dasharray: 6 5; fill: none; stroke-linecap: round; }
+      .arrow-rec { stroke: #7c3aed; stroke-width: 2.5; stroke-dasharray: 6 5; fill: none; stroke-linecap: round; }
+    </style>
+
+    <marker id="arr-blue" markerWidth="9" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 9 3, 0 6" fill="#2563eb" />
+    </marker>
+    <marker id="arr-green" markerWidth="9" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 9 3, 0 6" fill="#16a34a" />
+    </marker>
+    <marker id="arr-amber" markerWidth="9" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 9 3, 0 6" fill="#d97706" />
+    </marker>
+    <marker id="arr-red" markerWidth="9" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 9 3, 0 6" fill="#dc2626" />
+    </marker>
+    <marker id="arr-purple" markerWidth="9" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 9 3, 0 6" fill="#7c3aed" />
+    </marker>
+  </defs>
+
+  <!-- Background Canvas -->
+  <rect width="1200" height="600" class="bg" />
+
+  <!-- Diagram Title Header -->
+  <g transform="translate(50, 40)">
+    <text class="header-title" x="0" y="0">Job Lifecycle &amp; State Transitions</text>
+    <text class="header-sub" x="0" y="22">Deterministic State Machine: Queue &#8594; Execution &#8594; Exponential Backoff &#8594; Dead State</text>
+  </g>
+
+  <!-- STATE BOXES -->
+
+  <!-- 1. PENDING -->
+  <g transform="translate(60, 250)">
+    <rect width="180" height="110" class="state-pending" />
+    <text class="state-title" x="90" y="42" fill="#0f172a">PENDING</text>
+    <text class="state-sub" x="90" y="70">Due in queue</text>
+    <text class="state-sub" x="90" y="92">next_at &lt;= NOW()</text>
+  </g>
+
+  <!-- 2. IN_PROGRESS -->
+  <g transform="translate(370, 250)">
+    <rect width="200" height="110" class="state-inprogress" />
+    <text class="state-title" x="100" y="42" fill="#1d4ed8">IN_PROGRESS</text>
+    <text class="state-sub" x="100" y="70">Claimed by worker</text>
+    <text class="state-sub" x="100" y="92">locked_at recorded</text>
+  </g>
+
+  <!-- 3. SUCCESS (Terminal) -->
+  <g transform="translate(740, 130)">
+    <rect width="190" height="110" class="state-success" />
+    <text class="state-title" x="95" y="42" fill="#15803d">&#10004; SUCCESS</text>
+    <text class="state-sub" x="95" y="70">Delivered to site</text>
+    <text class="state-sub" x="95" y="92">Terminal state</text>
+  </g>
+
+  <!-- 4. FAILED (Transient) -->
+  <g transform="translate(740, 330)">
+    <rect width="190" height="110" class="state-failed" />
+    <text class="state-title" x="95" y="42" fill="#b45309">&#9888; FAILED</text>
+    <text class="state-sub" x="95" y="70">Backoff waiting</text>
+    <text class="state-sub" x="95" y="92">1m, 5m, 15m, 60m</text>
+  </g>
+
+  <!-- 5. DEAD (Attention) -->
+  <g transform="translate(980, 330)">
+    <rect width="170" height="110" class="state-dead" />
+    <text class="state-title" x="85" y="42" fill="#b91c1c">&#10006; DEAD</text>
+    <text class="state-sub" x="85" y="70">5 failures reached</text>
+    <text class="state-sub" x="85" y="92">Operator needed</text>
+  </g>
+
+  <!-- TRANSITIONS -->
+
+  <!-- Pending -> In Progress (Claim) -->
+  <g>
+    <path d="M 240 305 L 368 305" class="arrow-norm" marker-end="url(#arr-blue)" />
+    <text class="transition-label" x="304" y="290" text-anchor="middle">Worker Claim</text>
+    <text class="transition-sub" x="304" y="328" text-anchor="middle">Conditional UPDATE</text>
+  </g>
+
+  <!-- In Progress -> Success -->
+  <g>
+    <path d="M 570 270 L 738 190" class="arrow-succ" marker-end="url(#arr-green)" />
+    <text class="transition-label" x="655" y="210" text-anchor="middle">Delivered</text>
+    <text class="transition-sub" x="655" y="230" text-anchor="middle">HTTP 200 OK</text>
+  </g>
+
+  <!-- In Progress -> Failed (< 5 attempts) -->
+  <g>
+    <path d="M 570 330 L 738 375" class="arrow-fail" marker-end="url(#arr-amber)" />
+    <text class="transition-label" x="655" y="340" text-anchor="middle">Transient Failure</text>
+    <text class="transition-sub" x="655" y="360" text-anchor="middle">Attempts 1 to 4</text>
+  </g>
+
+  <!-- Failed -> Pending (Backoff delay elapsed) -->
+  <g>
+    <path d="M 740 410 C 650 500, 310 500, 160 362" class="arrow-fail" marker-end="url(#arr-amber)" />
+    <text class="transition-label" x="440" y="480" text-anchor="middle">Backoff delay elapsed</text>
+    <text class="transition-sub" x="440" y="500" text-anchor="middle">next_attempt_at &lt;= NOW() (status reset to pending)</text>
+  </g>
+
+  <!-- In Progress -> Dead (5th failure) -->
+  <g>
+    <path d="M 540 360 C 620 545, 920 545, 990 442" class="arrow-crit" marker-end="url(#arr-red)" />
+    <text class="transition-label" x="800" y="535" text-anchor="middle">5th Consecutive Failure</text>
+    <text class="transition-sub" x="800" y="555" text-anchor="middle">attempts &gt;= 5 (writes alerts.log)</text>
+  </g>
+
+  <!-- Dead -> Pending (Manual operator retry) -->
+  <g>
+    <path d="M 1065 330 C 1065 25, 140 25, 140 248" class="arrow-rec" marker-end="url(#arr-purple)" />
+    <text class="transition-label" x="600" y="30" text-anchor="middle">Manual Operator Retry (/api/retry.php)</text>
+    <text class="transition-sub" x="600" y="48" text-anchor="middle">Resets status to pending and next_at to now</text>
+  </g>
+
+  <!-- In Progress -> Pending (Stuck job recovery) -->
+  <g>
+    <path d="M 440 250 C 400 170, 280 170, 200 248" class="arrow-rec" marker-end="url(#arr-purple)" />
+    <text class="transition-label" x="315" y="160" text-anchor="middle">Stuck Recovery</text>
+    <text class="transition-sub" x="315" y="180" text-anchor="middle">locked &gt; 300s</text>
+  </g>
+
+  <!-- Footer Info -->
+  <g transform="translate(60, 570)">
+    <text class="footer-text" x="0" y="0">Sync Guard &bull; Simplified model with mock booking sites &bull; Deterministic state machine</text>
+  </g>
+
+</svg>

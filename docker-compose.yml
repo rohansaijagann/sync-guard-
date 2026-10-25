@@ -1,0 +1,92 @@
+services:
+  # Web Application: PHP 8.2 + Apache
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sync_guard_web
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www/html
+    environment:
+      APP_ENV: ${APP_ENV:-local}
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME:-sync_guard}
+      DB_USER: ${DB_USER:-sync_user}
+      DB_PASS: ${DB_PASS:-sync_pass}
+      TZ: UTC
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # Database: MySQL 8 (configured for utf8mb4 and UTC timezone)
+  db:
+    image: mysql:8.0
+    container_name: sync_guard_db
+    restart: unless-stopped
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-time-zone=+00:00
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASS:-rootsecret}
+      MYSQL_DATABASE: ${DB_NAME:-sync_guard}
+      MYSQL_USER: ${DB_USER:-sync_user}
+      MYSQL_PASSWORD: ${DB_PASS:-sync_pass}
+      TZ: UTC
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: [ "CMD-SHELL", "mysqladmin ping -h localhost -u root -p$${MYSQL_ROOT_PASSWORD} || exit 1" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  # Optional phpMyAdmin for easy database inspection
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: sync_guard_pma
+    restart: unless-stopped
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      TZ: UTC
+    depends_on:
+      - db
+
+  # Background Queue Worker (Phase 3)
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sync_guard_worker
+    restart: unless-stopped
+    command: php bin/worker.php
+    profiles:
+      - worker
+    volumes:
+      - .:/var/www/html
+    environment:
+      APP_ENV: ${APP_ENV:-local}
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME:-sync_guard}
+      DB_USER: ${DB_USER:-sync_user}
+      DB_PASS: ${DB_PASS:-sync_pass}
+      MOCK_SHARED_SECRET: ${MOCK_SHARED_SECRET:-dev_mock_shared_secret_7c9f8a2b4e6d1c3a}
+      TZ: UTC
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  db_data:
+    driver: local

@@ -1,0 +1,334 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" width="1600" height="900">
+  <title>Sync Guard System Architecture</title>
+  <desc>Architecture diagram of the Sync Guard hotel channel manager synchronization layer, illustrating the end-to-end flow from staff UI to mock booking channels via database-backed transactional outbox queue and asynchronous worker.</desc>
+
+  <defs>
+    <style>
+      .bg { fill: #f8fafc; }
+      .header-title { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 26px; font-weight: 700; fill: #0f172a; }
+      .header-sub { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; fill: #475569; }
+      .col-header { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 18px; font-weight: 700; fill: #0f172a; }
+      .card-title { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 600; fill: #1e293b; }
+      .card-desc { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 15px; font-weight: 400; fill: #334155; }
+      .code-line { font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace; font-size: 14px; font-weight: 500; fill: #1e293b; }
+      .tx-label { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 15px; font-weight: 700; fill: #047857; }
+      .arrow-num { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 15px; font-weight: 800; fill: #ffffff; text-anchor: middle; dominant-baseline: central; }
+      .footer-text { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 15px; font-weight: 600; fill: #475569; }
+      
+      .box { fill: #ffffff; stroke: #cbd5e1; stroke-width: 1.5; rx: 8; }
+      .box-highlight { fill: #f0fdf4; stroke: #86efac; stroke-width: 2; rx: 8; }
+      .box-worker { fill: #ffffff; stroke: #94a3b8; stroke-width: 1.5; rx: 8; }
+      .box-site { fill: #ffffff; stroke: #cbd5e1; stroke-width: 1.5; rx: 6; }
+      
+      .col-box { fill: #f1f5f9; stroke: #e2e8f0; stroke-width: 1.5; rx: 12; }
+      
+      .arrow-solid { stroke: #2563eb; stroke-width: 2.5; fill: none; stroke-linecap: round; }
+      .arrow-dashed { stroke: #dc2626; stroke-width: 2.5; stroke-dasharray: 6 5; fill: none; stroke-linecap: round; }
+      .arrow-retry { stroke: #d97706; stroke-width: 2.5; stroke-dasharray: 6 5; fill: none; stroke-linecap: round; }
+      .arrow-circle { fill: #2563eb; }
+      .arrow-circle-red { fill: #dc2626; }
+      .arrow-circle-amber { fill: #d97706; }
+    </style>
+
+    <marker id="arrowhead-blue" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#2563eb" />
+    </marker>
+    <marker id="arrowhead-red" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#dc2626" />
+    </marker>
+    <marker id="arrowhead-amber" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#d97706" />
+    </marker>
+  </defs>
+
+  <!-- Background Canvas -->
+  <rect width="1600" height="900" class="bg" />
+
+  <!-- Diagram Title Header -->
+  <g transform="translate(40, 45)">
+    <text class="header-title" x="0" y="0">Sync Guard Architecture &amp; Data Pipeline</text>
+    <text class="header-sub" x="0" y="26">Transactional Outbox Queue, Autonomous CLI Worker, Exponential Backoff and Channel Health Tracking</text>
+  </g>
+
+  <!-- COLUMN 1: Staff Browser UI -->
+  <g transform="translate(40, 100)">
+    <rect width="240" height="660" class="col-box" />
+    <text class="col-header" x="20" y="38">Staff (Browser UI)</text>
+    
+    <g transform="translate(16, 60)">
+      <rect width="208" height="150" class="box" />
+      <text class="card-title" x="14" y="30">Update Inventory Form</text>
+      <text class="card-desc" x="14" y="60">Room selection &amp; presets</text>
+      <text class="card-desc" x="14" y="85">Sold out (0) / Stepper</text>
+      <text class="card-desc" x="14" y="110">Fast client validation</text>
+      <text class="card-desc" x="14" y="135">Idempotency UUID key</text>
+    </g>
+
+    <g transform="translate(16, 230)">
+      <rect width="208" height="170" class="box" />
+      <text class="card-title" x="14" y="30">Live Dashboard</text>
+      <text class="card-desc" x="14" y="60">Worker online pill status</text>
+      <text class="card-desc" x="14" y="85">Channel health &amp; risk</text>
+      <text class="card-desc" x="14" y="110">24h activity histogram</text>
+      <text class="card-desc" x="14" y="135">14-day room calendar</text>
+      <text class="card-desc" x="14" y="155">Dark / Light / Wall mode</text>
+    </g>
+
+    <g transform="translate(16, 420)">
+      <rect width="208" height="140" class="box" />
+      <text class="card-title" x="14" y="30">Sync Log</text>
+      <text class="card-desc" x="14" y="60">Filter status &amp; channel</text>
+      <text class="card-desc" x="14" y="85">Plain-language status</text>
+      <text class="card-desc" x="14" y="110">Expand attempt history</text>
+      <text class="card-desc" x="14" y="130">One-click dead job retry</text>
+    </g>
+  </g>
+
+  <!-- COLUMN 2: Web App (PHP + Apache) -->
+  <g transform="translate(305, 100)">
+    <rect width="250" height="660" class="col-box" />
+    <text class="col-header" x="20" y="38">Web App (PHP + Apache)</text>
+
+    <g transform="translate(16, 60)">
+      <rect width="218" height="150" class="box" />
+      <text class="card-title" x="14" y="30">Update API (/api/inventory)</text>
+      <text class="card-desc" x="14" y="60">Schema &amp; date validation</text>
+      <text class="card-desc" x="14" y="85">Client idempotency check</text>
+      <text class="card-desc" x="14" y="110">Begins DB transaction</text>
+      <text class="card-desc" x="14" y="135">Fan-out: 1 job per site</text>
+    </g>
+
+    <g transform="translate(16, 230)">
+      <rect width="218" height="170" class="box" />
+      <text class="card-title" x="14" y="30">Query APIs</text>
+      <text class="card-desc" x="14" y="60">/api/status.php (Health/Risk)</text>
+      <text class="card-desc" x="14" y="85">/api/jobs.php (Sync log)</text>
+      <text class="card-desc" x="14" y="110">/api/insights.php (Metrics)</text>
+      <text class="card-desc" x="14" y="135">/api/calendar.php (Grid sync)</text>
+      <text class="card-desc" x="14" y="155">/api/attempts.php (History)</text>
+    </g>
+
+    <g transform="translate(16, 420)">
+      <rect width="218" height="140" class="box" />
+      <text class="card-title" x="14" y="30">Retry API (/api/retry.php)</text>
+      <text class="card-desc" x="14" y="60">Resets dead job to pending</text>
+      <text class="card-desc" x="14" y="85">Resets next_at to NOW()</text>
+      <text class="card-desc" x="14" y="110">Maintains attempt history</text>
+      <text class="card-desc" x="14" y="130">Non-blocking operator action</text>
+    </g>
+  </g>
+
+  <!-- COLUMN 3: MySQL Database -->
+  <g transform="translate(580, 100)">
+    <rect width="265" height="660" class="col-box" />
+    <text class="col-header" x="20" y="38">MySQL Database</text>
+
+    <!-- One Transaction Outbox Container -->
+    <g transform="translate(14, 60)">
+      <rect width="237" height="230" class="box-highlight" />
+      <text class="tx-label" x="14" y="26">&#9889; ONE TRANSACTION</text>
+      
+      <g transform="translate(10, 38)">
+        <rect width="217" height="80" class="box" />
+        <text class="card-title" x="12" y="26">inventory_updates</text>
+        <text class="card-desc" x="12" y="48">room_id, date, units, price</text>
+        <text class="card-desc" x="12" y="68">UNIQUE (idempotency_key)</text>
+      </g>
+
+      <g transform="translate(10, 130)">
+        <rect width="217" height="85" class="box" />
+        <text class="card-title" x="12" y="26">sync_jobs (The Queue)</text>
+        <text class="card-desc" x="12" y="48">status: pending | in_prog</text>
+        <text class="card-desc" x="12" y="68">channel_id, attempts, next_at</text>
+      </g>
+    </g>
+
+    <g transform="translate(14, 310)">
+      <rect width="237" height="110" class="box" />
+      <text class="card-title" x="14" y="28">sync_attempts (Audit Log)</text>
+      <text class="card-desc" x="14" y="52">Immutable record of every try</text>
+      <text class="card-desc" x="14" y="74">outcome, http_status, ms</text>
+      <text class="card-desc" x="14" y="96">error_message, timestamp</text>
+    </g>
+
+    <g transform="translate(14, 440)">
+      <rect width="237" height="120" class="box" />
+      <text class="card-title" x="14" y="28">channel_health</text>
+      <text class="card-desc" x="14" y="52">Rolling window metrics</text>
+      <text class="card-desc" x="14" y="74">success_rate, consecutive</text>
+      <text class="card-desc" x="14" y="96">status: healthy | degraded</text>
+      <text class="card-desc" x="14" y="114">failing | recovering</text>
+    </g>
+  </g>
+
+  <!-- COLUMN 4: Background Worker (PHP CLI) -->
+  <g transform="translate(870, 100)">
+    <rect width="340" height="660" class="col-box" />
+    <text class="col-header" x="20" y="38">Worker Daemon (PHP CLI)</text>
+
+    <g transform="translate(16, 60)">
+      <rect width="308" height="520" class="box-worker" />
+      
+      <g transform="translate(14, 20)">
+        <text class="card-title" x="0" y="16">1. Atomic Claim (No Double-Sends)</text>
+        <text class="code-line" x="0" y="38">UPDATE sync_jobs</text>
+        <text class="code-line" x="0" y="58">SET status='in_progress', locked_at=NOW()</text>
+        <text class="code-line" x="0" y="78">WHERE status='pending' AND next_at &lt;= NOW()</text>
+        <text class="code-line" x="0" y="98">LIMIT 10</text>
+        <text class="card-desc" x="0" y="122">Safe across competing parallel workers</text>
+      </g>
+
+      <line x1="14" y1="140" x2="294" y2="140" stroke="#cbd5e1" stroke-width="1" />
+
+      <g transform="translate(14, 155)">
+        <text class="card-title" x="0" y="16">2. Adapter Execution &amp; Timeouts</text>
+        <text class="card-desc" x="0" y="40">Connect timeout: 2s | Request timeout: 5s</text>
+        <text class="card-desc" x="0" y="62">HMAC-SHA256 signature verification</text>
+        <text class="card-desc" x="0" y="84">Protocol isolation (REST JSON / XML)</text>
+      </g>
+
+      <line x1="14" y1="250" x2="294" y2="250" stroke="#cbd5e1" stroke-width="1" />
+
+      <g transform="translate(14, 265)">
+        <text class="card-title" x="0" y="16">3. Exponential Backoff &amp; Jitter</text>
+        <text class="card-desc" x="0" y="40">Delays: 1m &#8594; 5m &#8594; 15m &#8594; 60m</text>
+        <text class="card-desc" x="0" y="62">&#177;10% random jitter prevents herd storms</text>
+        <text class="card-desc" x="0" y="84">Transitions to DEAD after 5th failure</text>
+      </g>
+
+      <line x1="14" y1="360" x2="294" y2="360" stroke="#cbd5e1" stroke-width="1" />
+
+      <g transform="translate(14, 375)">
+        <text class="card-title" x="0" y="16">4. Observability &amp; Self-Healing</text>
+        <text class="card-desc" x="0" y="40">storage/worker_heartbeat.json (daemon pill)</text>
+        <text class="card-desc" x="0" y="62">storage/alerts.log (critical dead alert)</text>
+        <text class="card-desc" x="0" y="84">Stuck-job recovery after 300s timeout</text>
+        <text class="card-desc" x="0" y="106">Clean SIGTERM/SIGINT shutdown</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- COLUMN 5: Adapters & Mock Booking Sites -->
+  <g transform="translate(1235, 100)">
+    <rect width="325" height="660" class="col-box" />
+    <text class="col-header" x="20" y="38">Adapters &amp; Mock Booking Sites</text>
+
+    <!-- Site A -->
+    <g transform="translate(14, 60)">
+      <rect width="297" height="150" class="box-site" />
+      <text class="card-title" x="14" y="28">Site A (Fast &amp; Reliable)</text>
+      <text class="card-desc" x="14" y="52">Adapter: SiteAAdapter (JSON REST)</text>
+      <text class="card-desc" x="14" y="74">Mock: /mock/site_a.php (50 - 150 ms)</text>
+      <text class="card-desc" x="14" y="96">Success: 98% (rare timeouts)</text>
+      <text class="card-desc" x="14" y="118">HMAC SHA-256 signature in header</text>
+      <text class="card-desc" x="14" y="138">Idempotency-Key support</text>
+    </g>
+
+    <!-- Site B -->
+    <g transform="translate(14, 230)">
+      <rect width="297" height="150" class="box-site" />
+      <text class="card-title" x="14" y="28">Site B (Legacy XML, Slow)</text>
+      <text class="card-desc" x="14" y="52">Adapter: SiteBAdapter (OTA XML)</text>
+      <text class="card-desc" x="14" y="74">Mock: /mock/site_b.php (800 - 1800 ms)</text>
+      <text class="card-desc" x="14" y="96">OTA_HotelAvailNotifRQ XML body</text>
+      <text class="card-desc" x="14" y="118">Success: 90% (simulates 503)</text>
+      <text class="card-desc" x="14" y="138">Tests worker timeout handling</text>
+    </g>
+
+    <!-- Site C -->
+    <g transform="translate(14, 400)">
+      <rect width="297" height="160" class="box-site" />
+      <text class="card-title" x="14" y="28">Site C (Modern JSON, Flaky)</text>
+      <text class="card-desc" x="14" y="52">Adapter: SiteCAdapter (JSON REST)</text>
+      <text class="card-desc" x="14" y="74">Mock: /mock/site_c.php (100 - 300 ms)</text>
+      <text class="card-desc" x="14" y="96">Success: 75% normal, controllable</text>
+      <text class="card-desc" x="14" y="118">Demonstrates failing &amp; recovery state</text>
+      <text class="card-desc" x="14" y="138">Supports always_fail / always_succeed</text>
+    </g>
+  </g>
+
+  <!-- NUMBERED ARROWS & DATA FLOWS -->
+
+  <!-- Arrow 1: Staff submits a change -->
+  <g>
+    <path d="M 240 210 L 305 210" class="arrow-solid" marker-end="url(#arrowhead-blue)" />
+    <circle cx="272" cy="210" r="14" class="arrow-circle" />
+    <text class="arrow-num" x="272" y="210">1</text>
+  </g>
+
+  <!-- Arrow 2: API saves update & 1 job per site in 1 transaction -->
+  <g>
+    <path d="M 523 210 L 580 210" class="arrow-solid" marker-end="url(#arrowhead-blue)" />
+    <circle cx="551" cy="210" r="14" class="arrow-circle" />
+    <text class="arrow-num" x="551" y="210">2</text>
+  </g>
+
+  <!-- Arrow 3: Worker claims due job via conditional UPDATE -->
+  <g>
+    <path d="M 817 250 L 870 250" class="arrow-solid" marker-end="url(#arrowhead-blue)" />
+    <circle cx="843" cy="250" r="14" class="arrow-circle" />
+    <text class="arrow-num" x="843" y="250">3</text>
+  </g>
+
+  <!-- Arrow 4: Worker sends through adapter -->
+  <g>
+    <path d="M 1178 220 L 1235 220" class="arrow-solid" marker-end="url(#arrowhead-blue)" />
+    <circle cx="1206" cy="220" r="14" class="arrow-circle" />
+    <text class="arrow-num" x="1206" y="220">4</text>
+  </g>
+
+  <!-- Arrow 5: Mock site answers or fails -->
+  <g>
+    <path d="M 1235 310 L 1178 310" class="arrow-dashed" marker-end="url(#arrowhead-red)" />
+    <circle cx="1206" cy="310" r="14" class="arrow-circle-red" />
+    <text class="arrow-num" x="1206" y="310">5</text>
+  </g>
+
+  <!-- Arrow 6: Worker records attempt and updates health -->
+  <g>
+    <path d="M 870 420 L 817 420" class="arrow-solid" marker-end="url(#arrowhead-blue)" />
+    <circle cx="843" cy="420" r="14" class="arrow-circle" />
+    <text class="arrow-num" x="843" y="420">6</text>
+  </g>
+
+  <!-- Arrow 7: Failed jobs wait (1, 5, 15, 60m), 5th failure is dead -->
+  <g>
+    <path d="M 870 480 L 817 480" class="arrow-dashed" marker-end="url(#arrowhead-red)" />
+    <circle cx="843" cy="480" r="14" class="arrow-circle-red" />
+    <text class="arrow-num" x="843" y="480">7</text>
+  </g>
+
+  <!-- Arrow 8: Dashboard reads status / Staff retries dead job -->
+  <g>
+    <path d="M 305 480 L 240 480" class="arrow-retry" marker-end="url(#arrowhead-amber)" />
+    <circle cx="272" cy="480" r="14" class="arrow-circle-amber" />
+    <text class="arrow-num" x="272" y="480">8</text>
+  </g>
+
+  <!-- LEGEND & FOOTER -->
+  <g transform="translate(40, 785)">
+    <rect width="1520" height="85" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" rx="8" />
+    
+    <!-- Legend item 1 -->
+    <line x1="25" y1="42" x2="65" y2="42" class="arrow-solid" />
+    <circle cx="45" cy="42" r="9" class="arrow-circle" />
+    <text class="arrow-num" x="45" y="42" font-size="10">1</text>
+    <text class="card-desc" x="78" y="47" font-weight="600">Normal synchronous &amp; background delivery path</text>
+
+    <!-- Legend item 2 -->
+    <line x1="455" y1="42" x2="495" y2="42" class="arrow-dashed" />
+    <circle cx="475" cy="42" r="9" class="arrow-circle-red" />
+    <text class="arrow-num" x="475" y="42" font-size="10">7</text>
+    <text class="card-desc" x="508" y="47" font-weight="600">Failure, exponential backoff wait, or dead job state</text>
+
+    <!-- Legend item 3 -->
+    <line x1="905" y1="42" x2="945" y2="42" class="arrow-retry" />
+    <circle cx="925" cy="42" r="9" class="arrow-circle-amber" />
+    <text class="arrow-num" x="925" y="42" font-size="10">8</text>
+    <text class="card-desc" x="958" y="47" font-weight="600">Status poll / Manual operator retry</text>
+
+    <!-- Disclaimer Footer -->
+    <text class="footer-text" x="1495" y="47" text-anchor="end">Simplified model with mock booking sites</text>
+  </g>
+
+</svg>

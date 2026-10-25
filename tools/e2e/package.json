@@ -1,0 +1,8 @@
+{
+  "name": "syncguard-e2e",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "playwright": "1.49.0"
+  }
+}

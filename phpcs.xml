@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<ruleset name="SyncGuard">
+    <description>PSR-12 coding standard for SyncGuard src directory.</description>
+    <file>src</file>
+    <arg name="colors"/>
+    <arg value="p"/>
+    
+    <!-- Include PSR-12 standard -->
+    <rule ref="PSR12">
+        <!-- Relax line length: allows long SQL queries, regex patterns and descriptive comments without arbitrary line breaks -->
+        <exclude name="Generic.Files.LineLength"/>
+    </rule>
+</ruleset>

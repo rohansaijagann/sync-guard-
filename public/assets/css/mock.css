@@ -1,0 +1,439 @@
+/**
+ * Sync Guard - Mock Booking Partner Console Stylesheet
+ *
+ * Scoped styles for simulated OTA partner pages (Site A, Site B, Site C).
+ * Extends the design tokens and layout rules defined in style.css.
+ */
+
+/* ==========================================================================
+   1. Site Themes & Semantic Accent Tokens (WCAG AA Compliant in Both Themes)
+   ========================================================================== */
+
+/* Site A: Blue Accent (Fast & Reliable) */
+.site-theme-a {
+    --mock-accent: #38bdf8;
+    --mock-accent-hover: #0ea5e9;
+    --mock-accent-bg: rgba(56, 189, 248, 0.12);
+    --mock-accent-border: rgba(56, 189, 248, 0.35);
+}
+[data-theme="light"] .site-theme-a {
+    --mock-accent: #0284c7;
+    --mock-accent-hover: #0369a1;
+    --mock-accent-bg: rgba(2, 132, 199, 0.08);
+    --mock-accent-border: rgba(2, 132, 199, 0.3);
+}
+
+/* Site B: Amber Accent (Slow on Purpose) */
+.site-theme-b {
+    --mock-accent: #fbbf24;
+    --mock-accent-hover: #f59e0b;
+    --mock-accent-bg: rgba(251, 191, 36, 0.12);
+    --mock-accent-border: rgba(251, 191, 36, 0.35);
+}
+[data-theme="light"] .site-theme-b {
+    --mock-accent: #b45309;
+    --mock-accent-hover: #92400e;
+    --mock-accent-bg: rgba(180, 83, 9, 0.08);
+    --mock-accent-border: rgba(180, 83, 9, 0.3);
+}
+
+/* Site C: Purple / Violet Accent (Unreliable on Purpose) */
+.site-theme-c {
+    --mock-accent: #c084fc;
+    --mock-accent-hover: #a855f7;
+    --mock-accent-bg: rgba(192, 132, 252, 0.12);
+    --mock-accent-border: rgba(192, 132, 252, 0.35);
+}
+[data-theme="light"] .site-theme-c {
+    --mock-accent: #7e22ce;
+    --mock-accent-hover: #6b21a8;
+    --mock-accent-bg: rgba(126, 34, 206, 0.08);
+    --mock-accent-border: rgba(126, 34, 206, 0.3);
+}
+
+/* ==========================================================================
+   2. Mock Hero Banner
+   ========================================================================== */
+.mock-hero-banner {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: var(--space-5);
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-top: 4px solid var(--mock-accent);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    gap: var(--space-4);
+    flex-wrap: wrap;
+}
+
+.mock-hero-header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.mock-title-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+}
+
+.mock-site-title {
+    font-size: var(--font-2xl);
+    font-weight: 800;
+    color: var(--text-primary);
+    margin: 0;
+    letter-spacing: -0.02em;
+}
+
+.mock-personality-badge {
+    display: inline-flex;
+    align-items: center;
+    font-size: var(--font-xs);
+    font-weight: 600;
+    padding: 2px 10px;
+    border-radius: var(--radius-full);
+    color: var(--mock-accent);
+    background-color: var(--mock-accent-bg);
+    border: 1px solid var(--mock-accent-border);
+}
+
+.mock-mode-meta {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    font-size: var(--font-sm);
+    color: var(--text-secondary);
+    flex-wrap: wrap;
+    margin-top: var(--space-1);
+}
+
+.mock-mode-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    font-weight: 700;
+    text-transform: lowercase;
+}
+
+.mock-mode-explanation {
+    color: var(--text-secondary);
+    font-size: var(--font-xs);
+    line-height: 1.4;
+}
+
+.mock-hero-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: var(--space-2);
+}
+
+.live-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--font-xs);
+    font-weight: 600;
+    color: var(--status-healthy-text);
+}
+
+.live-pulse-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--status-healthy-text);
+    animation: livePulse 2s infinite ease-in-out;
+}
+
+@keyframes livePulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.85); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .live-pulse-dot {
+        animation: none !important;
+    }
+}
+
+.live-stale-notice {
+    font-size: var(--font-xs);
+    color: var(--status-degraded-text);
+    background-color: var(--status-degraded-bg);
+    border: 1px solid var(--status-degraded-border);
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+}
+
+/* ==========================================================================
+   3. Pipeline Flow Mini Diagram
+   ========================================================================== */
+.mock-flow-card {
+    padding: var(--space-3) var(--space-4);
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    flex-wrap: wrap;
+}
+
+.mock-flow-label {
+    font-size: var(--font-xs);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+}
+
+.mock-flow-svg {
+    max-width: 320px;
+    height: 38px;
+    width: 100%;
+}
+
+/* ==========================================================================
+   4. Stat Cards Grid
+   ========================================================================== */
+.mock-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--space-4);
+}
+
+.mock-stat-card {
+    padding: var(--space-4);
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    box-shadow: var(--shadow-sm);
+}
+
+.mock-stat-icon-tile {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-lg);
+    background-color: var(--mock-accent-bg);
+    color: var(--mock-accent);
+    border: 1px solid var(--mock-accent-border);
+    flex-shrink: 0;
+}
+
+.mock-stat-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.mock-stat-value {
+    font-size: var(--font-2xl);
+    font-weight: 800;
+    color: var(--text-primary);
+    line-height: 1.1;
+}
+
+.mock-stat-label {
+    font-size: var(--font-xs);
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-top: 2px;
+}
+
+/* ==========================================================================
+   5. Behavior Card & Warning Panel
+   ========================================================================== */
+.mock-behavior-card {
+    padding: var(--space-4);
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+}
+
+.mock-card-heading {
+    font-size: var(--font-base);
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 var(--space-3) 0;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.mock-behavior-list {
+    margin: 0;
+    padding-left: var(--space-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    font-size: var(--font-sm);
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.mock-behavior-list strong {
+    color: var(--text-primary);
+}
+
+.mock-forget-banner {
+    margin-top: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    background-color: var(--status-down-bg);
+    border: 1px solid var(--status-down-border);
+    border-radius: var(--radius-md);
+    color: var(--status-down-text);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--font-sm);
+    font-weight: 700;
+}
+
+/* ==========================================================================
+   6. Updates Received Table & Mobile Cards
+   ========================================================================== */
+.mock-table-card {
+    padding: var(--space-4);
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+}
+
+.mock-table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-3);
+}
+
+.mock-data-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.mock-data-table thead th {
+    padding: var(--space-3) var(--space-4);
+    text-align: left;
+    font-size: var(--font-xs);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-secondary);
+    border-bottom: 2px solid var(--border-color);
+}
+
+.mock-data-table tbody td {
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--border-color);
+    font-size: var(--font-sm);
+    color: var(--text-primary);
+    vertical-align: middle;
+}
+
+.mock-data-table tbody tr.mock-row {
+    transition: background-color 0.12s ease-in-out;
+}
+
+.mock-data-table tbody tr.mock-row:hover {
+    background-color: var(--bg-raised);
+}
+
+.mock-data-table tbody tr.mock-row:last-child td {
+    border-bottom: none;
+}
+
+.key-chip {
+    font-family: monospace;
+    font-size: var(--font-xs);
+    background-color: var(--bg-raised);
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    cursor: help;
+}
+
+.raw-xml-details {
+    margin-top: var(--space-2);
+}
+
+.raw-xml-summary {
+    font-size: var(--font-xs);
+    font-weight: 600;
+    color: var(--mock-accent);
+    cursor: pointer;
+    user-select: none;
+    padding: 2px 0;
+}
+
+.raw-xml-summary:hover {
+    text-decoration: underline;
+}
+
+.raw-xml-pre {
+    margin-top: var(--space-2);
+    padding: var(--space-3);
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    overflow-x: auto;
+    max-height: 200px;
+    font-size: 11px;
+    line-height: 1.4;
+    color: var(--text-primary);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+/* Responsive Table to Cards on Mobile */
+@media (max-width: 768px) {
+    .mock-data-table,
+    .mock-data-table tbody,
+    .mock-data-table tr.mock-row {
+        display: block;
+        width: 100%;
+    }
+
+    .mock-data-table thead {
+        display: none;
+    }
+
+    .mock-data-table tbody tr.mock-row {
+        margin-bottom: var(--space-3);
+        padding: var(--space-3);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        background-color: var(--bg-surface);
+    }
+
+    .mock-data-table td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: var(--space-2) 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .mock-data-table td::before {
+        content: attr(data-label);
+        font-size: var(--font-xs);
+        font-weight: 600;
+        color: var(--text-secondary);
+        margin-right: var(--space-2);
+    }
+
+    .mock-data-table td:last-child {
+        border-bottom: none;
+    }
+}

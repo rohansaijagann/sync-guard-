@@ -1,0 +1,36 @@
+# Environment file containing local credentials
+.env
+
+# Composer dependencies and vendor binaries
+vendor/
+
+# Node modules
+node_modules/
+
+# Storage runtime files
+storage/*.log
+storage/*.json
+storage/*.lock
+storage/mock/*.json
+storage/alerts.log
+storage/worker_heartbeat.json
+storage/worker_heartbeat.json.tmp
+!storage/.gitkeep
+!storage/mock/.gitkeep
+
+# IDE & Editor settings
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+.gemini/
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# Tools temporary output folders (keep committed docs/images and docs/screenshots)
+tools/e2e/test-results/
+tools/e2e/playwright-report/
+tools/screenshots/output/
+tools/screenshots/temp/

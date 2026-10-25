@@ -1,0 +1,29 @@
+{
+    "name": "syncguard/sync-guard",
+    "description": "Sync monitor and retry layer for a hotel channel manager (Phase 1: Project Setup and Database)",
+    "type": "project",
+    "license": "MIT",
+    "require": {
+        "php": ">=8.2",
+        "ext-pdo": "*",
+        "ext-pdo_mysql": "*"
+    },
+    "require-dev": {
+        "phpstan/phpstan": "^1.11",
+        "squizlabs/php_codesniffer": "^3.9"
+    },
+    "autoload": {
+        "psr-4": {
+            "SyncGuard\\": "src/"
+        }
+    },
+    "scripts": {
+        "verify": "php bin/verify_setup.php",
+        "test": "php bin/run_tests.php --quick",
+        "test:full": "php bin/run_tests.php",
+        "stan": "vendor/bin/phpstan analyse --debug --memory-limit=512M",
+        "cs": "vendor/bin/phpcs",
+        "cs:fix": "vendor/bin/phpcbf"
+    }
+}
+

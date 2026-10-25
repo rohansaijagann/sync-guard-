@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  test:
+    name: Build, Static Analysis and Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      # Step 1: Check out repository code
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Step 2: Set up PHP 8.2 environment on the runner for local tooling and composer caching
+      - name: Set up PHP 8.2
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: pdo, pdo_mysql, curl, mbstring
+          coverage: none
+
+      # Step 3: Cache Composer dependencies for fast incremental builds
+      - name: Cache Composer Dependencies
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
+
+      # Step 4: Install PHP dependencies on runner
+      - name: Install Composer Dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      # Step 5: Prepare local environment configuration
+      - name: Setup Environment File
+        run: cp .env.example .env
+
+      # Step 6: Start Docker Compose services (Apache/PHP web container, MySQL db, mock booking sites)
+      # GitHub-hosted runners have Docker and Docker Compose pre-installed.
+      - name: Start Docker Services
+        run: docker compose up -d --build
+
+      # Step 7: Wait for MySQL database container to become healthy and accept TCP connections
+      - name: Wait for MySQL Health
+        run: |
+          echo "Waiting for database container to be healthy..."
+          timeout 60s bash -c 'until docker compose exec -T db mysqladmin ping -h localhost -u root -prootsecret --silent; do sleep 2; done'
+          echo "MySQL is ready and accepting queries."
+
+      # Step 8: Initialize database schema, seed test rooms, and configure default mock channels
+      - name: Setup Database
+        run: docker compose exec -T web php bin/setup_db.php
+
+      # Step 9: Run automated test suite via the test runner in quick mode
+      # (Runs verify_setup, Phase 2-7, 6b, 6c, test_ui_inventory; skips browser smoke test which requires Playwright container)
+      - name: Run Test Suites
+        run: docker compose exec -T web php bin/run_tests.php --quick
+
+      # Step 10: Run PSR-12 code style check using PHP_CodeSniffer
+      - name: Code Style Check (PHP_CodeSniffer)
+        run: docker compose exec -T web vendor/bin/phpcs
+
+      # Step 11: Run PHPStan level 5 static analysis
+      - name: Static Analysis (PHPStan Level 5)
+        run: docker compose exec -T web vendor/bin/phpstan analyse --debug --memory-limit=512M
+
+      # Step 12: On any failure, print container logs for troubleshooting
+      - name: Dump Docker Logs on Failure
+        if: failure()
+        run: docker compose logs --tail=100

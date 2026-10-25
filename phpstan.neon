@@ -1,0 +1,8 @@
+parameters:
+    level: 5
+    paths:
+        - src
+        - public/api
+    treatPhpDocTypesAsCertain: false
+    parallel:
+        processTimeout: 300.0
